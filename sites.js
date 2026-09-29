@@ -38,13 +38,30 @@ window.PREVIEW_SITES = [
     baseUrl: 'https://www.moratame.net/detail/tamesu.php?project_id=89cd7'
   },
   {
-    id: 'b',
-    name: 'Bサイト',
-    css: ['https://b-site.example.com/css/common.css'],
+    id: 'moratame-sp',
+    name: 'モラタメ SP',
+    css: [
+      'https://www.moratame.net/css/bootstrap.v3.3.7--scope.css?2026092913',
+      'https://www.moratame.net/s/js/jqm/jquery.mobile-1.3.1.min.css?2026092913',
+      'https://www.moratame.net/s/css/jquery.mobile-1.3.1-user.css?2026092913',
+      'https://www.moratame.net/s/css/html5-doctor-reset-stylesheet.min.css',
+      'https://www.moratame.net/s/css/common.css?2026092913',
+      'https://www.moratame.net/s/css/style.3078.css?2026092913',
+      'https://www.moratame.net/s/css/style--sp.css?2026092913',
+      'https://www.moratame.net/s/css/style.moratamelist-tame--sp.css?2026092913',
+      'https://www.moratame.net/s/css/tooltip.css?2026092913',
+      'https://www.moratame.net/s/css/pickup.css?2026092913',
+      'https://www.moratame.net/css/style--common-sp-and-pc.css?2026092913',
+      'https://www.moratame.net/css/style--common-sp-and-pc-2.css?2026092913',
+      'https://www.moratame.net/css/mamahalo-pickup-items.css?2026092913',
+      'https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css',
+      'https://www.moratame.net/css/p9255-common--sp.css?2026092913',
+      'https://www.moratame.net/css/p9255-top--sp.css?2026092913'
+    ],
     headHtml: '',
     bodyClass: '',
-    wrapper: '<div id="container"><div class="content">{{content}}</div></div>',
-    baseUrl: 'https://b-site.example.com/'
+    wrapper: '<div data-role="page" class="page"><div data-role="content" class="content"><div class="container"><div class="block"><div id="accordion" class="block"><div><div id="g3">{{content}}</div></div></div></div></div></div>',
+    baseUrl: 'https://www.moratame.net/s/detail/tamesu.php?project_id=89cd7'
   },
   {
     id: 'c',
