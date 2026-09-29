@@ -1,200 +1,589 @@
 <!doctype html>
 <html lang="ja">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ブロック表示チェッカー</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+JP:wght@400;600&display=swap">
-<style>
-  :root {
-    --bg: #E9EDF1;
-    --panel: #FFFFFF;
-    --ink: #1B2430;
-    --muted: #5B6675;
-    --line: #CCD3DB;
-    --line-soft: #E2E7EC;
-    --accent: #2346C8;
-    --accent-soft: #E6EBFB;
-    --warn: #8A4305;
-    --warn-soft: #FDF0DC;
-    --diff: #C2331F;
-    --stage: #DDE3E9;
-    --sans: "IBM Plex Sans JP", system-ui, "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;
-    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  }
-  * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; }
-  body {
-    font-family: var(--sans); font-size: 14px; line-height: 1.5;
-    color: var(--ink); background: var(--bg);
-    display: flex; flex-direction: column;
-  }
-  button, input { font: inherit; color: inherit; }
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  [hidden] { display: none !important; }
 
-  /* header */
-  .bar {
-    display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 14px;
-    padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line);
-  }
-  .bar h1 { font-size: 16px; font-weight: 600; margin: 0; }
-  .bar p { margin: 0; color: var(--muted); font-size: 13px; }
-  .bar .btn { margin-left: auto; align-self: center; }
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ブロック表示チェッカー</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+JP:wght@400;600&display=swap">
+    <style>
+      :root {
+        --bg: #E9EDF1;
+        --panel: #FFFFFF;
+        --ink: #1B2430;
+        --muted: #5B6675;
+        --line: #CCD3DB;
+        --line-soft: #E2E7EC;
+        --accent: #2346C8;
+        --accent-soft: #E6EBFB;
+        --warn: #8A4305;
+        --warn-soft: #FDF0DC;
+        --diff: #C2331F;
+        --stage: #DDE3E9;
+        --sans: "IBM Plex Sans JP", system-ui, "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;
+        --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
 
-  .btn {
-    border: 1px solid var(--line); background: var(--panel);
-    padding: 6px 12px; border-radius: 6px; cursor: pointer;
-  }
-  .btn:hover { border-color: var(--muted); }
-  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .btn.primary:hover { background: #1B389F; }
-  .btn.quiet { border-color: transparent; color: var(--muted); padding: 4px 8px; }
-  .btn.quiet:hover { color: var(--ink); border-color: var(--line); }
+      * {
+        box-sizing: border-box;
+      }
 
-  .layout {
-    flex: 1; min-height: 0;
-    display: grid; grid-template-columns: minmax(320px, 36%) 1fr;
-  }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
 
-  /* editor */
-  .editor {
-    display: flex; flex-direction: column; min-height: 0;
-    background: var(--panel); border-right: 1px solid var(--line);
-  }
-  .editor-head, .editor-foot { display: flex; align-items: center; gap: 12px; padding: 8px 12px; }
-  .editor-head { border-bottom: 1px solid var(--line-soft); }
-  .editor-head label { font-weight: 600; }
-  .hint { margin-left: auto; color: var(--muted); font-size: 12px; }
-  .editor textarea {
-    flex: 1; min-height: 0; resize: none; border: 0; padding: 12px 14px;
-    font-family: var(--mono); font-size: 13px; line-height: 1.65; tab-size: 2;
-    color: var(--ink); background: #FAFBFC; white-space: pre; overflow: auto;
-  }
-  .editor textarea:focus { outline: none; box-shadow: inset 0 0 0 2px var(--accent-soft); }
-  .editor-foot { border-top: 1px solid var(--line-soft); justify-content: space-between; flex-wrap: wrap; }
-  .check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: pointer; }
-  .check input { accent-color: var(--accent); }
+      body {
+        font-family: var(--sans);
+        font-size: 14px;
+        line-height: 1.5;
+        color: var(--ink);
+        background: var(--bg);
+        display: flex;
+        flex-direction: column;
+      }
 
-  /* viewer */
-  .viewer { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-  .toolbar {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px;
-    padding: 10px 12px; background: var(--panel); border-bottom: 1px solid var(--line);
-  }
-  .tool-group { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
-  .seg {
-    display: inline-flex; flex-wrap: wrap;
-    border: 1px solid var(--line); border-radius: 6px; background: var(--panel); overflow: hidden;
-  }
-  .seg button {
-    border: 0; border-right: 1px solid var(--line-soft); background: transparent;
-    padding: 6px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
-  }
-  .seg button:last-child { border-right: 0; }
-  .seg button:hover { background: var(--bg); }
-  .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
-  .seg.small button { padding: 5px 10px; font-size: 13px; }
+      button,
+      input {
+        font: inherit;
+        color: inherit;
+      }
 
-  /* diff count on site buttons: the one loud element */
-  .badge {
-    min-width: 22px; padding: 0 6px; border-radius: 10px;
-    font-size: 12px; line-height: 18px; text-align: center; font-variant-numeric: tabular-nums;
-    background: var(--line-soft); color: var(--muted);
-  }
-  .badge.has { background: var(--diff); color: #fff; font-weight: 600; }
-  .seg button[aria-pressed="true"] .badge:not(.has) { background: rgba(255,255,255,.18); color: #fff; }
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
 
-  .stage {
-    flex: 1; min-height: 320px; position: relative; padding: 12px;
-    background: var(--stage); overflow: auto;
-  }
-  .stage.single .pane { position: absolute; inset: 12px; }
-  .stage.single .pane:not(.is-active) { visibility: hidden; pointer-events: none; }
-  .stage.grid {
-    display: grid; gap: 12px;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    grid-auto-rows: minmax(320px, 1fr);
-  }
-  .pane {
-    display: flex; flex-direction: column; min-height: 0; overflow: hidden;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
-  }
-  .stage.grid .pane.is-active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-  .pane-head {
-    display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px;
-    padding: 6px 10px; border-bottom: 1px solid var(--line-soft); font-size: 13px;
-  }
-  .pane-name { font-weight: 600; }
-  .pane-note { color: var(--muted); }
-  .pane-warn { color: var(--warn); background: var(--warn-soft); padding: 0 6px; border-radius: 4px; font-size: 12px; cursor: help; }
-  .pane-size { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .pane-body { flex: 1; min-height: 0; display: flex; justify-content: center; background: #F3F5F7; overflow: hidden; }
-  .frame-box { position: relative; overflow: hidden; background: #fff; box-shadow: 0 0 0 1px var(--line-soft); }
-  .frame-box iframe { position: absolute; top: 0; left: 0; border: 0; background: #fff; transform-origin: 0 0; }
+      [hidden] {
+        display: none !important;
+      }
 
-  /* diff panel */
-  .diff {
-    display: flex; flex-direction: column; min-height: 0; max-height: 40%;
-    background: var(--panel); border-top: 1px solid var(--line);
-  }
-  .diff.collapsed { max-height: none; }
-  .diff-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 8px 12px; }
-  .diff-head h2 { font-size: 14px; font-weight: 600; margin: 0; }
-  .diff-summary { color: var(--muted); font-size: 13px; }
-  .diff-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-left: auto; }
-  .diff-body { overflow: auto; padding: 0 12px 12px; }
-  .diff-note { margin: 4px 0 8px; padding: 6px 10px; border-radius: 6px; background: var(--warn-soft); color: var(--warn); font-size: 13px; }
-  .empty { color: var(--muted); margin: 4px 0 8px; }
-  .diff-el { border: 1px solid var(--line-soft); border-radius: 6px; margin-top: 6px; }
-  .diff-el summary {
-    display: flex; align-items: center; gap: 10px; padding: 6px 10px; cursor: pointer;
-    font-family: var(--mono); font-size: 12.5px; word-break: break-all;
-  }
-  .diff-el summary .count { margin-left: auto; color: var(--muted); font-family: var(--sans); white-space: nowrap; }
-  .diff-el table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; }
-  .diff-el th, .diff-el td { text-align: left; padding: 4px 10px; border-top: 1px solid var(--line-soft); vertical-align: top; word-break: break-all; }
-  .diff-el th { font-family: var(--sans); font-weight: 600; color: var(--muted); }
-  .diff-el td.site { color: var(--diff); }
-  .diff-el .row-actions { padding: 6px 10px; border-top: 1px solid var(--line-soft); }
+      /* header */
+      .bar {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 4px 14px;
+        padding: 10px 16px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+      }
 
-  .toast {
-    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
-    max-width: min(560px, calc(100vw - 32px));
-    background: var(--ink); color: #fff; padding: 8px 14px; border-radius: 6px; font-size: 13px;
-    opacity: 0; pointer-events: none; transition: opacity .15s;
-  }
-  .toast.show { opacity: 1; }
-  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+      .bar h1 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+      }
 
-  @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
-  @media (max-width: 900px) {
-    html, body { height: auto; }
-    .layout { grid-template-columns: 1fr; }
-    .editor { height: 45vh; border-right: 0; border-bottom: 1px solid var(--line); }
-    .stage { min-height: 70vh; flex: none; }
-    .diff { max-height: none; }
-    .tool-group { margin-left: 0; }
-  }
-</style>
-</head>
-<body>
+      .bar p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
 
-<header class="bar">
-  <h1>ブロック表示チェッカー</h1>
-  <p>共通ブロックが各サイトのCSSでどう表示されるかを確認します</p>
-  <button type="button" class="btn" id="shareBtn">共有リンクをコピー</button>
-</header>
+      .bar .btn {
+        margin-left: auto;
+        align-self: center;
+      }
 
-<div class="layout">
-  <section class="editor" aria-label="ブロックのコード">
-    <div class="editor-head">
-      <label for="code">ブロックのHTML</label>
-      <span class="hint">入力後すこし待つか ⌘/Ctrl + Enter で更新</span>
-    </div>
-    <textarea id="code" spellcheck="false" autocomplete="off" aria-describedby="codeKeys">        <div class="">
+      .btn {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+
+      .btn:hover {
+        border-color: var(--muted);
+      }
+
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+
+      .btn.primary:hover {
+        background: #1B389F;
+      }
+
+      .btn.quiet {
+        border-color: transparent;
+        color: var(--muted);
+        padding: 4px 8px;
+      }
+
+      .btn.quiet:hover {
+        color: var(--ink);
+        border-color: var(--line);
+      }
+
+      .layout {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(320px, 36%) 1fr;
+      }
+
+      /* editor */
+      .editor {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        background: var(--panel);
+        border-right: 1px solid var(--line);
+      }
+
+      .editor-head,
+      .editor-foot {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px;
+      }
+
+      .editor-head {
+        border-bottom: 1px solid var(--line-soft);
+      }
+
+      .editor-head label {
+        font-weight: 600;
+      }
+
+      .hint {
+        margin-left: auto;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .editor textarea {
+        flex: 1;
+        min-height: 0;
+        resize: none;
+        border: 0;
+        padding: 12px 14px;
+        font-family: var(--mono);
+        font-size: 13px;
+        line-height: 1.65;
+        tab-size: 2;
+        color: var(--ink);
+        background: #FAFBFC;
+        white-space: pre;
+        overflow: auto;
+      }
+
+      .editor textarea:focus {
+        outline: none;
+        box-shadow: inset 0 0 0 2px var(--accent-soft);
+      }
+
+      .editor-foot {
+        border-top: 1px solid var(--line-soft);
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+
+      .check {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--muted);
+        cursor: pointer;
+      }
+
+      .check input {
+        accent-color: var(--accent);
+      }
+
+      /* viewer */
+      .viewer {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 16px;
+        padding: 10px 12px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .tool-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-left: auto;
+      }
+
+      .seg {
+        display: inline-flex;
+        flex-wrap: wrap;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--panel);
+        overflow: hidden;
+      }
+
+      .seg button {
+        border: 0;
+        border-right: 1px solid var(--line-soft);
+        background: transparent;
+        padding: 6px 12px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .seg button:last-child {
+        border-right: 0;
+      }
+
+      .seg button:hover {
+        background: var(--bg);
+      }
+
+      .seg button[aria-pressed="true"] {
+        background: var(--ink);
+        color: #fff;
+      }
+
+      .seg.small button {
+        padding: 5px 10px;
+        font-size: 13px;
+      }
+
+      /* diff count on site buttons: the one loud element */
+      .badge {
+        min-width: 22px;
+        padding: 0 6px;
+        border-radius: 10px;
+        font-size: 12px;
+        line-height: 18px;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+        background: var(--line-soft);
+        color: var(--muted);
+      }
+
+      .badge.has {
+        background: var(--diff);
+        color: #fff;
+        font-weight: 600;
+      }
+
+      .seg button[aria-pressed="true"] .badge:not(.has) {
+        background: rgba(255, 255, 255, .18);
+        color: #fff;
+      }
+
+      .stage {
+        flex: 1;
+        min-height: 320px;
+        position: relative;
+        padding: 12px;
+        background: var(--stage);
+        overflow: auto;
+      }
+
+      .stage.single .pane {
+        position: absolute;
+        inset: 12px;
+      }
+
+      .stage.single .pane:not(.is-active) {
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .stage.grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        grid-auto-rows: minmax(320px, 1fr);
+      }
+
+      .pane {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      .stage.grid .pane.is-active {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px var(--accent);
+      }
+
+      .pane-head {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 4px 8px;
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--line-soft);
+        font-size: 13px;
+      }
+
+      .pane-name {
+        font-weight: 600;
+      }
+
+      .pane-note {
+        color: var(--muted);
+      }
+
+      .pane-warn {
+        color: var(--warn);
+        background: var(--warn-soft);
+        padding: 0 6px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: help;
+      }
+
+      .pane-size {
+        margin-left: auto;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .pane-body {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        justify-content: center;
+        background: #F3F5F7;
+        overflow: hidden;
+      }
+
+      .frame-box {
+        position: relative;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: 0 0 0 1px var(--line-soft);
+      }
+
+      .frame-box iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        border: 0;
+        background: #fff;
+        transform-origin: 0 0;
+      }
+
+      /* diff panel */
+      .diff {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        max-height: 40%;
+        background: var(--panel);
+        border-top: 1px solid var(--line);
+      }
+
+      .diff.collapsed {
+        max-height: none;
+      }
+
+      .diff-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 16px;
+        padding: 8px 12px;
+      }
+
+      .diff-head h2 {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .diff-summary {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .diff-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 14px;
+        margin-left: auto;
+      }
+
+      .diff-body {
+        overflow: auto;
+        padding: 0 12px 12px;
+      }
+
+      .diff-note {
+        margin: 4px 0 8px;
+        padding: 6px 10px;
+        border-radius: 6px;
+        background: var(--warn-soft);
+        color: var(--warn);
+        font-size: 13px;
+      }
+
+      .empty {
+        color: var(--muted);
+        margin: 4px 0 8px;
+      }
+
+      .diff-el {
+        border: 1px solid var(--line-soft);
+        border-radius: 6px;
+        margin-top: 6px;
+      }
+
+      .diff-el summary {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 10px;
+        cursor: pointer;
+        font-family: var(--mono);
+        font-size: 12.5px;
+        word-break: break-all;
+      }
+
+      .diff-el summary .count {
+        margin-left: auto;
+        color: var(--muted);
+        font-family: var(--sans);
+        white-space: nowrap;
+      }
+
+      .diff-el table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+
+      .diff-el th,
+      .diff-el td {
+        text-align: left;
+        padding: 4px 10px;
+        border-top: 1px solid var(--line-soft);
+        vertical-align: top;
+        word-break: break-all;
+      }
+
+      .diff-el th {
+        font-family: var(--sans);
+        font-weight: 600;
+        color: var(--muted);
+      }
+
+      .diff-el td.site {
+        color: var(--diff);
+      }
+
+      .diff-el .row-actions {
+        padding: 6px 10px;
+        border-top: 1px solid var(--line-soft);
+      }
+
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 20px;
+        transform: translateX(-50%);
+        max-width: min(560px, calc(100vw - 32px));
+        background: var(--ink);
+        color: #fff;
+        padding: 8px 14px;
+        border-radius: 6px;
+        font-size: 13px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .15s;
+      }
+
+      .toast.show {
+        opacity: 1;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .toast {
+          transition: none;
+        }
+      }
+
+      @media (max-width: 900px) {
+
+        html,
+        body {
+          height: auto;
+        }
+
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        .editor {
+          height: 45vh;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .stage {
+          min-height: 70vh;
+          flex: none;
+        }
+
+        .diff {
+          max-height: none;
+        }
+
+        .tool-group {
+          margin-left: 0;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <header class="bar">
+      <h1>ブロック表示チェッカー</h1>
+      <p>共通ブロックが各サイトのCSSでどう表示されるかを確認します</p>
+      <button type="button" class="btn" id="shareBtn">共有リンクをコピー</button>
+    </header>
+
+    <div class="layout">
+      <section class="editor" aria-label="ブロックのコード">
+        <div class="editor-head">
+          <label for="code">ブロックのHTML</label>
+          <span class="hint">入力後すこし待つか ⌘/Ctrl + Enter で更新</span>
+        </div>
+        <textarea id="code" spellcheck="false" autocomplete="off" aria-describedby="codeKeys">        <div class="">
           <!-- fonts -->
           <!-- /fonts -->
           <!-- css  -->
@@ -516,591 +905,592 @@
           <script src="./scripts/accordion.2.js"></script>
           <!-- <script src="https://image.moratame.net/images/detail/00000/scripts/accordion.2.js"></script> -->
         </div></textarea>
-    <span class="sr-only" id="codeKeys">Tabキーでインデントします。入力欄から移動するときは Esc を押してから Tab を押してください。</span>
-    <div class="editor-foot">
-      <label class="check"><input type="checkbox" id="runJs"> JavaScriptを実行する</label>
-      <button type="button" class="btn primary" id="renderBtn">プレビューを更新</button>
+        <span class="sr-only" id="codeKeys">Tabキーでインデントします。入力欄から移動するときは Esc を押してから Tab を押してください。</span>
+        <div class="editor-foot">
+          <label class="check"><input type="checkbox" id="runJs"> JavaScriptを実行する</label>
+          <button type="button" class="btn primary" id="renderBtn">プレビューを更新</button>
+        </div>
+      </section>
+
+      <section class="viewer" aria-label="プレビュー">
+        <div class="toolbar">
+          <div class="seg" id="siteSeg" aria-label="表示するサイト"></div>
+          <div class="tool-group">
+            <div class="seg small" id="widthSeg" aria-label="表示幅">
+              <button type="button" data-value="pc">PC 1280</button>
+              <button type="button" data-value="sp">SP 375</button>
+              <button type="button" data-value="fit">枠に合わせる</button>
+            </div>
+            <div class="seg small" id="modeSeg" aria-label="表示方法">
+              <button type="button" data-value="single">1画面</button>
+              <button type="button" data-value="grid">並べて比較</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="stage single" id="stage"></div>
+
+        <section class="diff" id="diffPanel" aria-labelledby="diffTitle">
+          <div class="diff-head">
+            <h2 id="diffTitle">基準との差分</h2>
+            <span class="diff-summary" id="diffSummary"></span>
+            <div class="diff-controls">
+              <label class="check"><input type="checkbox" id="hideSize" checked> 幅・高さの差を除く</label>
+              <label class="check"><input type="checkbox" id="hideInherited" checked> 親から継承しただけの差を除く</label>
+              <button type="button" class="btn quiet" id="diffToggle" aria-expanded="true" aria-controls="diffBody">たたむ</button>
+            </div>
+          </div>
+          <div class="diff-body" id="diffBody"></div>
+        </section>
+      </section>
     </div>
-  </section>
 
-  <section class="viewer" aria-label="プレビュー">
-    <div class="toolbar">
-      <div class="seg" id="siteSeg" aria-label="表示するサイト"></div>
-      <div class="tool-group">
-        <div class="seg small" id="widthSeg" aria-label="表示幅">
-          <button type="button" data-value="pc">PC 1280</button>
-          <button type="button" data-value="sp">SP 375</button>
-          <button type="button" data-value="fit">枠に合わせる</button>
-        </div>
-        <div class="seg small" id="modeSeg" aria-label="表示方法">
-          <button type="button" data-value="single">1画面</button>
-          <button type="button" data-value="grid">並べて比較</button>
-        </div>
-      </div>
-    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <div class="stage single" id="stage"></div>
+    <script src="sites.js"></script>
+    <script>
+      (() => {
+        'use strict';
 
-    <section class="diff" id="diffPanel" aria-labelledby="diffTitle">
-      <div class="diff-head">
-        <h2 id="diffTitle">基準との差分</h2>
-        <span class="diff-summary" id="diffSummary"></span>
-        <div class="diff-controls">
-          <label class="check"><input type="checkbox" id="hideSize" checked> 幅・高さの差を除く</label>
-          <label class="check"><input type="checkbox" id="hideInherited" checked> 親から継承しただけの差を除く</label>
-          <button type="button" class="btn quiet" id="diffToggle" aria-expanded="true" aria-controls="diffBody">たたむ</button>
-        </div>
-      </div>
-      <div class="diff-body" id="diffBody"></div>
-    </section>
-  </section>
-</div>
+        const SITES = Array.isArray(window.PREVIEW_SITES) ? window.PREVIEW_SITES : [];
+        const OPTIONS = window.PREVIEW_OPTIONS || {};
+        const BASE = { id: 'base', name: '基準', note: 'サイトCSSなし', base: true, baseUrl: OPTIONS.baseUrl || '' };
+        const TARGETS = [BASE, ...SITES.map(s => ({ ...s, id: String(s.id) }))];
+        const WIDTHS = { pc: 1280, sp: 375 };
+        const SIZE_PROPS = new Set(['width', 'height', 'inline-size', 'block-size', 'transform-origin', 'perspective-origin']);
+        const FOLLOWS_COLOR = /^(border-.+-color|outline-color|column-rule-color|text-decoration-color|text-emphasis-color|caret-color|-webkit-text-fill-color|-webkit-text-stroke-color)$/;
+        const SKIP_TAGS = new Set(['STYLE', 'SCRIPT', 'TEMPLATE', 'LINK', 'META', 'NOSCRIPT']);
+        const LS_KEY = 'block-preview-state-v1';
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+        const $ = s => document.querySelector(s);
+        const codeEl = $('#code');
+        const stage = $('#stage');
+        const siteSeg = $('#siteSeg');
+        const diffBody = $('#diffBody');
+        const diffSummary = $('#diffSummary');
+        const diffTitle = $('#diffTitle');
 
-<script src="sites.js"></script>
-<script>
-(() => {
-  'use strict';
+        const state = {
+          code: codeEl.value,
+          active: SITES.length ? String(SITES[0].id) : 'base',
+          mode: 'single',
+          width: 'pc',
+          runJs: false,
+          hideSize: true,
+          hideInherited: true
+        };
 
-  const SITES = Array.isArray(window.PREVIEW_SITES) ? window.PREVIEW_SITES : [];
-  const OPTIONS = window.PREVIEW_OPTIONS || {};
-  const BASE = { id: 'base', name: '基準', note: 'サイトCSSなし', base: true, baseUrl: OPTIONS.baseUrl || '' };
-  const TARGETS = [BASE, ...SITES.map(s => ({ ...s, id: String(s.id) }))];
-  const WIDTHS = { pc: 1280, sp: 375 };
-  const SIZE_PROPS = new Set(['width', 'height', 'inline-size', 'block-size', 'transform-origin', 'perspective-origin']);
-  const FOLLOWS_COLOR = /^(border-.+-color|outline-color|column-rule-color|text-decoration-color|text-emphasis-color|caret-color|-webkit-text-fill-color|-webkit-text-stroke-color)$/;
-  const SKIP_TAGS = new Set(['STYLE', 'SCRIPT', 'TEMPLATE', 'LINK', 'META', 'NOSCRIPT']);
-  const LS_KEY = 'block-preview-state-v1';
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const panes = new Map();
+        let diffs = {};
+        let renderSeq = 0;
 
-  const $ = s => document.querySelector(s);
-  const codeEl = $('#code');
-  const stage = $('#stage');
-  const siteSeg = $('#siteSeg');
-  const diffBody = $('#diffBody');
-  const diffSummary = $('#diffSummary');
-  const diffTitle = $('#diffTitle');
+        /* ---------- utilities ---------- */
+        const attr = v => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const targetById = id => TARGETS.find(t => t.id === id);
+        const displayName = t => t.base ? '基準' : t.name;
 
-  const state = {
-    code: codeEl.value,
-    active: SITES.length ? String(SITES[0].id) : 'base',
-    mode: 'single',
-    width: 'pc',
-    runJs: false,
-    hideSize: true,
-    hideInherited: true
-  };
-
-  const panes = new Map();
-  let diffs = {};
-  let renderSeq = 0;
-
-  /* ---------- utilities ---------- */
-  const attr = v => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const targetById = id => TARGETS.find(t => t.id === id);
-  const displayName = t => t.base ? '基準' : t.name;
-
-  let toastTimer;
-  function toast(msg) {
-    const el = $('#toast');
-    el.textContent = msg;
-    el.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
-  }
-
-  function save() {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { /* storage unavailable */ }
-  }
-  function restore() {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (raw) Object.assign(state, JSON.parse(raw));
-    } catch (e) { /* ignore */ }
-  }
-
-  async function encode(str) {
-    const stream = new Blob([new TextEncoder().encode(str)]).stream().pipeThrough(new CompressionStream('deflate-raw'));
-    const buf = new Uint8Array(await new Response(stream).arrayBuffer());
-    let bin = '';
-    for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
-    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  }
-  async function decode(s) {
-    s = s.replace(/-/g, '+').replace(/_/g, '/');
-    while (s.length % 4) s += '=';
-    const bytes = Uint8Array.from(atob(s), c => c.charCodeAt(0));
-    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-    return new TextDecoder().decode(await new Response(stream).arrayBuffer());
-  }
-
-  /* ---------- document building ---------- */
-  function buildDoc(t, code) {
-    const marked = '<!--cpv:start-->\n' + code + '\n<!--cpv:end-->';
-    const baseTag = t.baseUrl ? `<base href="${attr(t.baseUrl)}">` : '';
-    const head = '<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' + baseTag;
-    if (t.base) {
-      return `<!doctype html><html lang="ja"><head>${head}</head><body>${marked}<\/body><\/html>`;
-    }
-    const links = (t.css || []).map(u => `<link rel="stylesheet" href="${attr(u)}">`).join('\n');
-    const wrapper = (t.wrapper && t.wrapper.includes('{{content}}')) ? t.wrapper : '{{content}}';
-    const body = wrapper.replace('{{content}}', () => marked);
-    const bodyAttr = t.bodyClass ? ` class="${attr(t.bodyClass)}"` : '';
-    return `<!doctype html><html lang="${attr(t.lang || 'ja')}"><head>${head}${links}${t.headHtml || ''}</head><body${bodyAttr}>${body}<\/body><\/html>`;
-  }
-
-  // Elements of the block: everything between the two marker comments.
-  function blockElements(doc) {
-    if (!doc) return [];
-    const walker = doc.createTreeWalker(doc, NodeFilter.SHOW_COMMENT);
-    let start = null, end = null, n;
-    while ((n = walker.nextNode())) {
-      if (n.data === 'cpv:start') start = n;
-      else if (n.data === 'cpv:end') { end = n; break; }
-    }
-    if (!start) return [];
-    const out = [];
-    for (const el of doc.querySelectorAll('body *')) {
-      if (SKIP_TAGS.has(el.tagName)) continue;
-      const afterStart = start.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING;
-      const beforeEnd = !end || (el.compareDocumentPosition(end) & Node.DOCUMENT_POSITION_FOLLOWING);
-      if (afterStart && beforeEnd) out.push(el);
-    }
-    return out;
-  }
-
-  /* ---------- panes ---------- */
-  function buildUI() {
-    TARGETS.forEach(t => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.dataset.id = t.id;
-      const label = document.createElement('span');
-      label.textContent = t.base ? '基準（サイトCSSなし）' : t.name;
-      b.append(label);
-      if (!t.base) {
-        const badge = document.createElement('span');
-        badge.className = 'badge';
-        badge.textContent = '…';
-        badge.title = '基準と差がある要素の数';
-        b.append(badge);
-      }
-      b.addEventListener('click', () => setActive(t.id, true));
-      siteSeg.append(b);
-
-      const pane = document.createElement('div');
-      pane.className = 'pane';
-      const head = document.createElement('div');
-      head.className = 'pane-head';
-      const nameEl = document.createElement('span');
-      nameEl.className = 'pane-name';
-      nameEl.textContent = displayName(t);
-      head.append(nameEl);
-      if (t.base) {
-        const note = document.createElement('span');
-        note.className = 'pane-note';
-        note.textContent = t.note;
-        head.append(note);
-      }
-      const warnEl = document.createElement('span');
-      warnEl.className = 'pane-warn';
-      warnEl.hidden = true;
-      const sizeEl = document.createElement('span');
-      sizeEl.className = 'pane-size';
-      head.append(warnEl, sizeEl);
-
-      const body = document.createElement('div');
-      body.className = 'pane-body';
-      const box = document.createElement('div');
-      box.className = 'frame-box';
-      body.append(box);
-      pane.append(head, body);
-      pane.addEventListener('pointerdown', () => { if (state.mode === 'grid') setActive(t.id, false); });
-      stage.append(pane);
-
-      panes.set(t.id, { t, el: pane, body, box, warnEl, sizeEl, iframe: null, token: 0 });
-    });
-  }
-
-  function layoutPane(p) {
-    const bw = p.body.clientWidth, bh = p.body.clientHeight;
-    if (!bw || !bh) return;
-    const tw = state.width === 'fit' ? bw : WIDTHS[state.width];
-    const s = Math.min(1, bw / tw);
-    p.box.style.width = Math.floor(tw * s) + 'px';
-    p.box.style.height = bh + 'px';
-    p.box.querySelectorAll('iframe').forEach(f => {
-      f.style.width = tw + 'px';
-      f.style.height = Math.ceil(bh / s) + 'px';
-      f.style.transform = s < 1 ? `scale(${s})` : '';
-    });
-    p.sizeEl.textContent = s < 1 ? `${tw}px（${Math.round(s * 100)}%表示）` : `${tw}px`;
-  }
-  const layoutAll = () => panes.forEach(layoutPane);
-
-  function checkCss(p) {
-    try {
-      const doc = p.iframe.contentDocument;
-      // 他ドメインのCSSはブラウザの仕様でステータスが取れないため、判定できるのは
-      // 同一ドメイン（またはTiming-Allow-Originを返すサーバー）のCSSのみ
-      const perf = p.iframe.contentWindow.performance;
-      const failed = [...doc.querySelectorAll('link[rel~="stylesheet"]')].filter(l => {
-        if (!l.sheet) return true;
-        const entry = perf.getEntriesByName(l.href)[0];
-        return !!(entry && entry.responseStatus >= 400);
-      }).map(l => l.href);
-      if (failed.length) {
-        p.warnEl.hidden = false;
-        p.warnEl.textContent = `CSSを読み込めません ${failed.length}件`;
-        p.warnEl.title = 'sites.js のURLを確認してください\n' + failed.join('\n');
-      } else {
-        p.warnEl.hidden = true;
-      }
-    } catch (e) { /* ignore */ }
-  }
-
-  function loadPane(p) {
-    return new Promise(resolve => {
-      const token = ++p.token;
-      let scrollY = 0;
-      try { scrollY = p.iframe ? p.iframe.contentWindow.scrollY : 0; } catch (e) { /* ignore */ }
-
-      const f = document.createElement('iframe');
-      f.title = `${displayName(p.t)}のプレビュー`;
-      if (!state.runJs) f.setAttribute('sandbox', 'allow-same-origin');
-      f.style.visibility = 'hidden';
-
-      let done = false;
-      const finish = () => {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
-        if (token !== p.token) { f.remove(); resolve(); return; }
-        try { if (scrollY) f.contentWindow.scrollTo(0, scrollY); } catch (e) { /* ignore */ }
-        f.style.visibility = '';
-        const old = p.iframe;
-        p.iframe = f;
-        if (old && old !== f) old.remove();
-        checkCss(p);
-        resolve();
-      };
-      const timer = setTimeout(finish, 10000);
-      f.addEventListener('load', finish, { once: true });
-      f.srcdoc = buildDoc(p.t, state.code);
-      p.box.append(f);
-      layoutPane(p);
-    });
-  }
-
-  function render() {
-    const seq = ++renderSeq;
-    save();
-    diffs = {};
-    updateBadges();
-    renderDiff();
-    Promise.all([...panes.values()].map(loadPane)).then(() => {
-      if (seq !== renderSeq) return;
-      requestAnimationFrame(() => requestAnimationFrame(computeDiffs));
-    });
-  }
-
-  /* ---------- diff ---------- */
-  function describe(el) {
-    let s = el.tagName.toLowerCase();
-    if (el.id) s += '#' + el.id;
-    const cls = [...el.classList].slice(0, 2);
-    if (cls.length) s += '.' + cls.join('.');
-    return s;
-  }
-
-  function computeDiffs() {
-    const baseP = panes.get('base');
-    const bDoc = baseP && baseP.iframe && baseP.iframe.contentDocument;
-    const bEls = blockElements(bDoc);
-    diffs = {};
-
-    panes.forEach((p, id) => {
-      if (p.t.base) return;
-      try {
-        const sDoc = p.iframe && p.iframe.contentDocument;
-        const sEls = blockElements(sDoc);
-        const inBlock = new Set(sEls);
-        const n = Math.min(bEls.length, sEls.length);
-        const ownDiffs = new Map();
-        const items = [];
-        for (let i = 0; i < n; i++) {
-          const bs = bEls[i].ownerDocument.defaultView.getComputedStyle(bEls[i]);
-          const ss = sEls[i].ownerDocument.defaultView.getComputedStyle(sEls[i]);
-          const parent = sEls[i].parentElement;
-          const parentDiffs = ownDiffs.get(parent);
-          const mine = new Map();
-          const shown = [];
-          for (let k = 0; k < bs.length; k++) {
-            const prop = bs[k];
-            if (prop.startsWith('--')) continue;
-            if (state.hideSize && SIZE_PROPS.has(prop)) continue;
-            const a = bs.getPropertyValue(prop);
-            const b = ss.getPropertyValue(prop);
-            if (a === b) continue;
-            // currentColor に追従しているだけの色（border-color など）は color の差として出るので省く
-            if (FOLLOWS_COLOR.test(prop) && a === bs.color && b === ss.color) continue;
-            const key = a + '\u0000' + b;
-            mine.set(prop, key);
-            if (state.hideInherited && parentDiffs && parentDiffs.get(prop) === key) continue;
-            shown.push([prop, a, b]);
-          }
-          ownDiffs.set(sEls[i], mine);
-          if (shown.length) {
-            const label = (parent && inBlock.has(parent)) ? `${describe(parent)} > ${describe(sEls[i])}` : describe(sEls[i]);
-            items.push({ index: i, label, props: shown });
-          }
+        let toastTimer;
+        function toast(msg) {
+          const el = $('#toast');
+          el.textContent = msg;
+          el.classList.add('show');
+          clearTimeout(toastTimer);
+          toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
         }
-        diffs[id] = { items, mismatch: bEls.length !== sEls.length };
-      } catch (e) {
-        diffs[id] = { error: true };
-      }
-    });
-    updateBadges();
-    renderDiff();
-  }
 
-  function updateBadges() {
-    siteSeg.querySelectorAll('button').forEach(b => {
-      const badge = b.querySelector('.badge');
-      if (!badge) return;
-      const r = diffs[b.dataset.id];
-      if (!r) { badge.textContent = '…'; badge.classList.remove('has'); return; }
-      if (r.error) { badge.textContent = '!'; badge.classList.add('has'); return; }
-      badge.textContent = String(r.items.length);
-      badge.classList.toggle('has', r.items.length > 0);
-    });
-  }
+        function save() {
+          try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { /* storage unavailable */ }
+        }
+        function restore() {
+          try {
+            const raw = localStorage.getItem(LS_KEY);
+            if (raw) Object.assign(state, JSON.parse(raw));
+          } catch (e) { /* ignore */ }
+        }
 
-  function renderDiff() {
-    diffBody.replaceChildren();
-    const t = targetById(state.active);
-    const addText = (cls, text) => {
-      const p = document.createElement('p');
-      p.className = cls;
-      p.textContent = text;
-      diffBody.append(p);
-    };
-    if (!t || t.base) {
-      diffTitle.textContent = '基準との差分';
-      diffSummary.textContent = '';
-      addText('empty', '基準はサイトのCSSを読み込まない表示です。サイトを選ぶと、基準と計算スタイルが違う要素がここに並びます。');
-      return;
-    }
-    diffTitle.textContent = `${t.name}と基準の差分`;
-    const r = diffs[t.id];
-    if (!r) { diffSummary.textContent = '計算中'; return; }
-    if (r.error) {
-      diffSummary.textContent = '';
-      addText('diff-note', 'このサイトのプレビューからスタイルを取得できませんでした。「プレビューを更新」を押してもう一度試してください。');
-      return;
-    }
-    diffSummary.textContent = r.items.length ? `${r.items.length}要素に差があります` : '差はありません';
-    if (r.mismatch) {
-      addText('diff-note', 'ブロック内の要素数が基準と一致しません。サイト側のJavaScriptがDOMを書き換えているか、HTMLの閉じタグが欠けている可能性があります。差分の対応がずれることがあります。');
-    }
-    if (!r.items.length) {
-      addText('empty', 'ブロック内のすべての要素で、計算スタイルが基準と同じです。');
-      return;
-    }
-    const openAll = r.items.length <= 3;
-    r.items.forEach(item => {
-      const d = document.createElement('details');
-      d.className = 'diff-el';
-      if (openAll) d.open = true;
-      const sum = document.createElement('summary');
-      const code = document.createElement('span');
-      code.textContent = item.label;
-      const count = document.createElement('span');
-      count.className = 'count';
-      count.textContent = `${item.props.length}件`;
-      sum.append(code, count);
-      d.append(sum);
+        async function encode(str) {
+          const stream = new Blob([new TextEncoder().encode(str)]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+          const buf = new Uint8Array(await new Response(stream).arrayBuffer());
+          let bin = '';
+          for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+          return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+        async function decode(s) {
+          s = s.replace(/-/g, '+').replace(/_/g, '/');
+          while (s.length % 4) s += '=';
+          const bytes = Uint8Array.from(atob(s), c => c.charCodeAt(0));
+          const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+          return new TextDecoder().decode(await new Response(stream).arrayBuffer());
+        }
 
-      const table = document.createElement('table');
-      const thead = document.createElement('tr');
-      ['プロパティ', '基準', t.name].forEach(h => {
-        const th = document.createElement('th');
-        th.textContent = h;
-        thead.append(th);
-      });
-      table.append(thead);
-      item.props.forEach(([prop, a, b]) => {
-        const tr = document.createElement('tr');
-        [[prop, ''], [a, ''], [b, 'site']].forEach(([v, cls]) => {
-          const td = document.createElement('td');
-          td.textContent = v;
-          if (cls) td.className = cls;
-          tr.append(td);
-        });
-        table.append(tr);
-      });
-      d.append(table);
+        /* ---------- document building ---------- */
+        function buildDoc(t, code) {
+          const marked = '<!--cpv:start-->\n' + code + '\n<!--cpv:end-->';
+          const baseTag = t.baseUrl ? `<base href="${attr(t.baseUrl)}">` : '';
+          const head = '<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' + baseTag;
+          if (t.base) {
+            return `<!doctype html><html lang="ja"><head>${head}</head><body>${marked}<\/body><\/html>`;
+          }
+          const links = (t.css || []).map(u => `<link rel="stylesheet" href="${attr(u)}">`).join('\n');
+          const wrapper = (t.wrapper && t.wrapper.includes('{{content}}')) ? t.wrapper : '{{content}}';
+          const body = wrapper.replace('{{content}}', () => marked);
+          const bodyAttr = t.bodyClass ? ` class="${attr(t.bodyClass)}"` : '';
+          return `<!doctype html><html lang="${attr(t.lang || 'ja')}"><head>${head}${links}${t.headHtml || ''}</head><body${bodyAttr}>${body}<\/body><\/html>`;
+        }
 
-      const actions = document.createElement('div');
-      actions.className = 'row-actions';
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'btn';
-      btn.textContent = 'プレビューで場所を表示';
-      btn.addEventListener('click', () => locate(t.id, item.index));
-      actions.append(btn);
-      d.append(actions);
-      diffBody.append(d);
-    });
-  }
+        // Elements of the block: everything between the two marker comments.
+        function blockElements(doc) {
+          if (!doc) return [];
+          const walker = doc.createTreeWalker(doc, NodeFilter.SHOW_COMMENT);
+          let start = null, end = null, n;
+          while ((n = walker.nextNode())) {
+            if (n.data === 'cpv:start') start = n;
+            else if (n.data === 'cpv:end') { end = n; break; }
+          }
+          if (!start) return [];
+          const out = [];
+          for (const el of doc.querySelectorAll('body *')) {
+            if (SKIP_TAGS.has(el.tagName)) continue;
+            const afterStart = start.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING;
+            const beforeEnd = !end || (el.compareDocumentPosition(end) & Node.DOCUMENT_POSITION_FOLLOWING);
+            if (afterStart && beforeEnd) out.push(el);
+          }
+          return out;
+        }
 
-  function locate(id, index) {
-    const p = panes.get(id);
-    if (!p || !p.iframe) return;
-    const el = blockElements(p.iframe.contentDocument)[index];
-    if (!el) return;
-    if (state.mode === 'grid') p.el.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
-    el.scrollIntoView({ block: 'center' });
-    const prevOutline = el.style.outline;
-    const prevOffset = el.style.outlineOffset;
-    el.style.outline = '3px solid #C2331F';
-    el.style.outlineOffset = '2px';
-    setTimeout(() => { el.style.outline = prevOutline; el.style.outlineOffset = prevOffset; }, 2000);
-  }
+        /* ---------- panes ---------- */
+        function buildUI() {
+          TARGETS.forEach(t => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.dataset.id = t.id;
+            const label = document.createElement('span');
+            label.textContent = t.base ? '基準（サイトCSSなし）' : t.name;
+            b.append(label);
+            if (!t.base) {
+              const badge = document.createElement('span');
+              badge.className = 'badge';
+              badge.textContent = '…';
+              badge.title = '基準と差がある要素の数';
+              b.append(badge);
+            }
+            b.addEventListener('click', () => setActive(t.id, true));
+            siteSeg.append(b);
 
-  /* ---------- controls ---------- */
-  function setActive(id, fromButton) {
-    if (!targetById(id)) id = 'base';
-    state.active = id;
-    siteSeg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
-    panes.forEach((p, pid) => p.el.classList.toggle('is-active', pid === id));
-    if (fromButton && state.mode === 'grid') {
-      panes.get(id).el.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
-    }
-    renderDiff();
-    save();
-  }
+            const pane = document.createElement('div');
+            pane.className = 'pane';
+            const head = document.createElement('div');
+            head.className = 'pane-head';
+            const nameEl = document.createElement('span');
+            nameEl.className = 'pane-name';
+            nameEl.textContent = displayName(t);
+            head.append(nameEl);
+            if (t.base) {
+              const note = document.createElement('span');
+              note.className = 'pane-note';
+              note.textContent = t.note;
+              head.append(note);
+            }
+            const warnEl = document.createElement('span');
+            warnEl.className = 'pane-warn';
+            warnEl.hidden = true;
+            const sizeEl = document.createElement('span');
+            sizeEl.className = 'pane-size';
+            head.append(warnEl, sizeEl);
 
-  function setSeg(container, key, value) {
-    state[key] = value;
-    container.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.value === value)));
-  }
+            const body = document.createElement('div');
+            body.className = 'pane-body';
+            const box = document.createElement('div');
+            box.className = 'frame-box';
+            body.append(box);
+            pane.append(head, body);
+            pane.addEventListener('pointerdown', () => { if (state.mode === 'grid') setActive(t.id, false); });
+            stage.append(pane);
 
-  function setMode(mode) {
-    setSeg($('#modeSeg'), 'mode', mode);
-    stage.classList.toggle('single', mode === 'single');
-    stage.classList.toggle('grid', mode === 'grid');
-    requestAnimationFrame(() => { layoutAll(); scheduleDiff(); });
-    save();
-  }
+            panes.set(t.id, { t, el: pane, body, box, warnEl, sizeEl, iframe: null, token: 0 });
+          });
+        }
 
-  function setWidth(w) {
-    setSeg($('#widthSeg'), 'width', w);
-    layoutAll();
-    scheduleDiff();
-    save();
-  }
+        function layoutPane(p) {
+          const bw = p.body.clientWidth, bh = p.body.clientHeight;
+          if (!bw || !bh) return;
+          const tw = state.width === 'fit' ? bw : WIDTHS[state.width];
+          const s = Math.min(1, bw / tw);
+          p.box.style.width = Math.floor(tw * s) + 'px';
+          p.box.style.height = bh + 'px';
+          p.box.querySelectorAll('iframe').forEach(f => {
+            f.style.width = tw + 'px';
+            f.style.height = Math.ceil(bh / s) + 'px';
+            f.style.transform = s < 1 ? `scale(${s})` : '';
+          });
+          p.sizeEl.textContent = s < 1 ? `${tw}px（${Math.round(s * 100)}%表示）` : `${tw}px`;
+        }
+        const layoutAll = () => panes.forEach(layoutPane);
 
-  let diffTimer;
-  function scheduleDiff() {
-    clearTimeout(diffTimer);
-    diffTimer = setTimeout(computeDiffs, 300);
-  }
+        function checkCss(p) {
+          try {
+            const doc = p.iframe.contentDocument;
+            // 他ドメインのCSSはブラウザの仕様でステータスが取れないため、判定できるのは
+            // 同一ドメイン（またはTiming-Allow-Originを返すサーバー）のCSSのみ
+            const perf = p.iframe.contentWindow.performance;
+            const failed = [...doc.querySelectorAll('link[rel~="stylesheet"]')].filter(l => {
+              if (!l.sheet) return true;
+              const entry = perf.getEntriesByName(l.href)[0];
+              return !!(entry && entry.responseStatus >= 400);
+            }).map(l => l.href);
+            if (failed.length) {
+              p.warnEl.hidden = false;
+              p.warnEl.textContent = `CSSを読み込めません ${failed.length}件`;
+              p.warnEl.title = 'sites.js のURLを確認してください\n' + failed.join('\n');
+            } else {
+              p.warnEl.hidden = true;
+            }
+          } catch (e) { /* ignore */ }
+        }
 
-  function bindEvents() {
-    let inputTimer;
-    let escaped = false;
-    codeEl.addEventListener('input', () => {
-      state.code = codeEl.value;
-      clearTimeout(inputTimer);
-      inputTimer = setTimeout(render, 600);
-    });
-    codeEl.addEventListener('keydown', e => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        e.preventDefault();
-        clearTimeout(inputTimer);
-        render();
-        return;
-      }
-      if (e.key === 'Escape') { escaped = true; return; }
-      if (e.key === 'Tab' && !e.shiftKey && !e.altKey && !e.metaKey && !e.ctrlKey && !escaped) {
-        e.preventDefault();
-        codeEl.setRangeText('  ', codeEl.selectionStart, codeEl.selectionEnd, 'end');
-        codeEl.dispatchEvent(new Event('input'));
-      }
-      escaped = false;
-    });
+        function loadPane(p) {
+          return new Promise(resolve => {
+            const token = ++p.token;
+            let scrollY = 0;
+            try { scrollY = p.iframe ? p.iframe.contentWindow.scrollY : 0; } catch (e) { /* ignore */ }
 
-    $('#renderBtn').addEventListener('click', () => { clearTimeout(inputTimer); render(); });
-    $('#runJs').addEventListener('change', e => { state.runJs = e.target.checked; render(); });
-    $('#hideSize').addEventListener('change', e => { state.hideSize = e.target.checked; save(); computeDiffs(); });
-    $('#hideInherited').addEventListener('change', e => { state.hideInherited = e.target.checked; save(); computeDiffs(); });
-    $('#modeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setMode(b.dataset.value); });
-    $('#widthSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setWidth(b.dataset.value); });
+            const f = document.createElement('iframe');
+            f.title = `${displayName(p.t)}のプレビュー`;
+            if (!state.runJs) f.setAttribute('sandbox', 'allow-same-origin');
+            f.style.visibility = 'hidden';
 
-    $('#diffToggle').addEventListener('click', e => {
-      const btn = e.currentTarget;
-      const open = btn.getAttribute('aria-expanded') === 'true';
-      btn.setAttribute('aria-expanded', String(!open));
-      btn.textContent = open ? 'ひらく' : 'たたむ';
-      diffBody.hidden = open;
-      $('#diffPanel').classList.toggle('collapsed', open);
-      requestAnimationFrame(layoutAll);
-    });
+            let done = false;
+            const finish = () => {
+              if (done) return;
+              done = true;
+              clearTimeout(timer);
+              if (token !== p.token) { f.remove(); resolve(); return; }
+              try { if (scrollY) f.contentWindow.scrollTo(0, scrollY); } catch (e) { /* ignore */ }
+              f.style.visibility = '';
+              const old = p.iframe;
+              p.iframe = f;
+              if (old && old !== f) old.remove();
+              checkCss(p);
+              resolve();
+            };
+            const timer = setTimeout(finish, 10000);
+            f.addEventListener('load', finish, { once: true });
+            f.srcdoc = buildDoc(p.t, state.code);
+            p.box.append(f);
+            layoutPane(p);
+          });
+        }
 
-    $('#shareBtn').addEventListener('click', async () => {
-      try {
-        const params = new URLSearchParams({ c: await encode(state.code), s: state.active, m: state.mode, w: state.width });
-        const url = location.href.split('#')[0] + '#' + params.toString();
-        await navigator.clipboard.writeText(url);
-        toast(url.length > 8000
-          ? '共有リンクをコピーしました。URLが長いため、貼り付け先によっては途中で切れることがあります'
-          : '共有リンクをコピーしました');
-      } catch (e) {
-        toast('共有リンクを作れませんでした。ブラウザがクリップボードへの書き込みを許可しているか確認してください');
-      }
-    });
+        function render() {
+          const seq = ++renderSeq;
+          save();
+          diffs = {};
+          updateBadges();
+          renderDiff();
+          Promise.all([...panes.values()].map(loadPane)).then(() => {
+            if (seq !== renderSeq) return;
+            requestAnimationFrame(() => requestAnimationFrame(computeDiffs));
+          });
+        }
 
-    new ResizeObserver(() => {
-      layoutAll();
-      if (state.width === 'fit') scheduleDiff();
-    }).observe(stage);
-  }
+        /* ---------- diff ---------- */
+        function describe(el) {
+          let s = el.tagName.toLowerCase();
+          if (el.id) s += '#' + el.id;
+          const cls = [...el.classList].slice(0, 2);
+          if (cls.length) s += '.' + cls.join('.');
+          return s;
+        }
 
-  /* ---------- init ---------- */
-  async function init() {
-    restore();
-    const hash = new URLSearchParams(location.hash.slice(1));
-    if (hash.has('c')) {
-      try {
-        state.code = await decode(hash.get('c'));
-        if (hash.get('s')) state.active = hash.get('s');
-        if (hash.get('m') === 'single' || hash.get('m') === 'grid') state.mode = hash.get('m');
-        if (['pc', 'sp', 'fit'].includes(hash.get('w'))) state.width = hash.get('w');
-        toast('共有リンクのコードを読み込みました');
-      } catch (e) {
-        toast('共有リンクを読み込めませんでした。URLが途中で切れていないか確認してください');
-      }
-      history.replaceState(null, '', location.pathname + location.search);
-    }
+        function computeDiffs() {
+          const baseP = panes.get('base');
+          const bDoc = baseP && baseP.iframe && baseP.iframe.contentDocument;
+          const bEls = blockElements(bDoc);
+          diffs = {};
 
-    codeEl.value = state.code;
-    $('#runJs').checked = state.runJs;
-    $('#hideSize').checked = state.hideSize;
-    $('#hideInherited').checked = state.hideInherited;
+          panes.forEach((p, id) => {
+            if (p.t.base) return;
+            try {
+              const sDoc = p.iframe && p.iframe.contentDocument;
+              const sEls = blockElements(sDoc);
+              const inBlock = new Set(sEls);
+              const n = Math.min(bEls.length, sEls.length);
+              const ownDiffs = new Map();
+              const items = [];
+              for (let i = 0; i < n; i++) {
+                const bs = bEls[i].ownerDocument.defaultView.getComputedStyle(bEls[i]);
+                const ss = sEls[i].ownerDocument.defaultView.getComputedStyle(sEls[i]);
+                const parent = sEls[i].parentElement;
+                const parentDiffs = ownDiffs.get(parent);
+                const mine = new Map();
+                const shown = [];
+                for (let k = 0; k < bs.length; k++) {
+                  const prop = bs[k];
+                  if (prop.startsWith('--')) continue;
+                  if (state.hideSize && SIZE_PROPS.has(prop)) continue;
+                  const a = bs.getPropertyValue(prop);
+                  const b = ss.getPropertyValue(prop);
+                  if (a === b) continue;
+                  // currentColor に追従しているだけの色（border-color など）は color の差として出るので省く
+                  if (FOLLOWS_COLOR.test(prop) && a === bs.color && b === ss.color) continue;
+                  const key = a + '\u0000' + b;
+                  mine.set(prop, key);
+                  if (state.hideInherited && parentDiffs && parentDiffs.get(prop) === key) continue;
+                  shown.push([prop, a, b]);
+                }
+                ownDiffs.set(sEls[i], mine);
+                if (shown.length) {
+                  const label = (parent && inBlock.has(parent)) ? `${describe(parent)} > ${describe(sEls[i])}` : describe(sEls[i]);
+                  items.push({ index: i, label, props: shown });
+                }
+              }
+              diffs[id] = { items, mismatch: bEls.length !== sEls.length };
+            } catch (e) {
+              diffs[id] = { error: true };
+            }
+          });
+          updateBadges();
+          renderDiff();
+        }
 
-    buildUI();
-    bindEvents();
-    setMode(state.mode === 'grid' ? 'grid' : 'single');
-    setWidth(['pc', 'sp', 'fit'].includes(state.width) ? state.width : 'pc');
-    setActive(state.active, false);
-    if (!SITES.length) toast('sites.js にサイトが設定されていません');
-    render();
-  }
+        function updateBadges() {
+          siteSeg.querySelectorAll('button').forEach(b => {
+            const badge = b.querySelector('.badge');
+            if (!badge) return;
+            const r = diffs[b.dataset.id];
+            if (!r) { badge.textContent = '…'; badge.classList.remove('has'); return; }
+            if (r.error) { badge.textContent = '!'; badge.classList.add('has'); return; }
+            badge.textContent = String(r.items.length);
+            badge.classList.toggle('has', r.items.length > 0);
+          });
+        }
 
-  init();
-})();
-</script>
-</body>
+        function renderDiff() {
+          diffBody.replaceChildren();
+          const t = targetById(state.active);
+          const addText = (cls, text) => {
+            const p = document.createElement('p');
+            p.className = cls;
+            p.textContent = text;
+            diffBody.append(p);
+          };
+          if (!t || t.base) {
+            diffTitle.textContent = '基準との差分';
+            diffSummary.textContent = '';
+            addText('empty', '基準はサイトのCSSを読み込まない表示です。サイトを選ぶと、基準と計算スタイルが違う要素がここに並びます。');
+            return;
+          }
+          diffTitle.textContent = `${t.name}と基準の差分`;
+          const r = diffs[t.id];
+          if (!r) { diffSummary.textContent = '計算中'; return; }
+          if (r.error) {
+            diffSummary.textContent = '';
+            addText('diff-note', 'このサイトのプレビューからスタイルを取得できませんでした。「プレビューを更新」を押してもう一度試してください。');
+            return;
+          }
+          diffSummary.textContent = r.items.length ? `${r.items.length}要素に差があります` : '差はありません';
+          if (r.mismatch) {
+            addText('diff-note', 'ブロック内の要素数が基準と一致しません。サイト側のJavaScriptがDOMを書き換えているか、HTMLの閉じタグが欠けている可能性があります。差分の対応がずれることがあります。');
+          }
+          if (!r.items.length) {
+            addText('empty', 'ブロック内のすべての要素で、計算スタイルが基準と同じです。');
+            return;
+          }
+          const openAll = r.items.length <= 3;
+          r.items.forEach(item => {
+            const d = document.createElement('details');
+            d.className = 'diff-el';
+            if (openAll) d.open = true;
+            const sum = document.createElement('summary');
+            const code = document.createElement('span');
+            code.textContent = item.label;
+            const count = document.createElement('span');
+            count.className = 'count';
+            count.textContent = `${item.props.length}件`;
+            sum.append(code, count);
+            d.append(sum);
+
+            const table = document.createElement('table');
+            const thead = document.createElement('tr');
+            ['プロパティ', '基準', t.name].forEach(h => {
+              const th = document.createElement('th');
+              th.textContent = h;
+              thead.append(th);
+            });
+            table.append(thead);
+            item.props.forEach(([prop, a, b]) => {
+              const tr = document.createElement('tr');
+              [[prop, ''], [a, ''], [b, 'site']].forEach(([v, cls]) => {
+                const td = document.createElement('td');
+                td.textContent = v;
+                if (cls) td.className = cls;
+                tr.append(td);
+              });
+              table.append(tr);
+            });
+            d.append(table);
+
+            const actions = document.createElement('div');
+            actions.className = 'row-actions';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn';
+            btn.textContent = 'プレビューで場所を表示';
+            btn.addEventListener('click', () => locate(t.id, item.index));
+            actions.append(btn);
+            d.append(actions);
+            diffBody.append(d);
+          });
+        }
+
+        function locate(id, index) {
+          const p = panes.get(id);
+          if (!p || !p.iframe) return;
+          const el = blockElements(p.iframe.contentDocument)[index];
+          if (!el) return;
+          if (state.mode === 'grid') p.el.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
+          el.scrollIntoView({ block: 'center' });
+          const prevOutline = el.style.outline;
+          const prevOffset = el.style.outlineOffset;
+          el.style.outline = '3px solid #C2331F';
+          el.style.outlineOffset = '2px';
+          setTimeout(() => { el.style.outline = prevOutline; el.style.outlineOffset = prevOffset; }, 2000);
+        }
+
+        /* ---------- controls ---------- */
+        function setActive(id, fromButton) {
+          if (!targetById(id)) id = 'base';
+          state.active = id;
+          siteSeg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
+          panes.forEach((p, pid) => p.el.classList.toggle('is-active', pid === id));
+          if (fromButton && state.mode === 'grid') {
+            panes.get(id).el.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
+          }
+          renderDiff();
+          save();
+        }
+
+        function setSeg(container, key, value) {
+          state[key] = value;
+          container.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.value === value)));
+        }
+
+        function setMode(mode) {
+          setSeg($('#modeSeg'), 'mode', mode);
+          stage.classList.toggle('single', mode === 'single');
+          stage.classList.toggle('grid', mode === 'grid');
+          requestAnimationFrame(() => { layoutAll(); scheduleDiff(); });
+          save();
+        }
+
+        function setWidth(w) {
+          setSeg($('#widthSeg'), 'width', w);
+          layoutAll();
+          scheduleDiff();
+          save();
+        }
+
+        let diffTimer;
+        function scheduleDiff() {
+          clearTimeout(diffTimer);
+          diffTimer = setTimeout(computeDiffs, 300);
+        }
+
+        function bindEvents() {
+          let inputTimer;
+          let escaped = false;
+          codeEl.addEventListener('input', () => {
+            state.code = codeEl.value;
+            clearTimeout(inputTimer);
+            inputTimer = setTimeout(render, 600);
+          });
+          codeEl.addEventListener('keydown', e => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+              e.preventDefault();
+              clearTimeout(inputTimer);
+              render();
+              return;
+            }
+            if (e.key === 'Escape') { escaped = true; return; }
+            if (e.key === 'Tab' && !e.shiftKey && !e.altKey && !e.metaKey && !e.ctrlKey && !escaped) {
+              e.preventDefault();
+              codeEl.setRangeText('  ', codeEl.selectionStart, codeEl.selectionEnd, 'end');
+              codeEl.dispatchEvent(new Event('input'));
+            }
+            escaped = false;
+          });
+
+          $('#renderBtn').addEventListener('click', () => { clearTimeout(inputTimer); render(); });
+          $('#runJs').addEventListener('change', e => { state.runJs = e.target.checked; render(); });
+          $('#hideSize').addEventListener('change', e => { state.hideSize = e.target.checked; save(); computeDiffs(); });
+          $('#hideInherited').addEventListener('change', e => { state.hideInherited = e.target.checked; save(); computeDiffs(); });
+          $('#modeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setMode(b.dataset.value); });
+          $('#widthSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setWidth(b.dataset.value); });
+
+          $('#diffToggle').addEventListener('click', e => {
+            const btn = e.currentTarget;
+            const open = btn.getAttribute('aria-expanded') === 'true';
+            btn.setAttribute('aria-expanded', String(!open));
+            btn.textContent = open ? 'ひらく' : 'たたむ';
+            diffBody.hidden = open;
+            $('#diffPanel').classList.toggle('collapsed', open);
+            requestAnimationFrame(layoutAll);
+          });
+
+          $('#shareBtn').addEventListener('click', async () => {
+            try {
+              const params = new URLSearchParams({ c: await encode(state.code), s: state.active, m: state.mode, w: state.width });
+              const url = location.href.split('#')[0] + '#' + params.toString();
+              await navigator.clipboard.writeText(url);
+              toast(url.length > 8000
+                ? '共有リンクをコピーしました。URLが長いため、貼り付け先によっては途中で切れることがあります'
+                : '共有リンクをコピーしました');
+            } catch (e) {
+              toast('共有リンクを作れませんでした。ブラウザがクリップボードへの書き込みを許可しているか確認してください');
+            }
+          });
+
+          new ResizeObserver(() => {
+            layoutAll();
+            if (state.width === 'fit') scheduleDiff();
+          }).observe(stage);
+        }
+
+        /* ---------- init ---------- */
+        async function init() {
+          restore();
+          const hash = new URLSearchParams(location.hash.slice(1));
+          if (hash.has('c')) {
+            try {
+              state.code = await decode(hash.get('c'));
+              if (hash.get('s')) state.active = hash.get('s');
+              if (hash.get('m') === 'single' || hash.get('m') === 'grid') state.mode = hash.get('m');
+              if (['pc', 'sp', 'fit'].includes(hash.get('w'))) state.width = hash.get('w');
+              toast('共有リンクのコードを読み込みました');
+            } catch (e) {
+              toast('共有リンクを読み込めませんでした。URLが途中で切れていないか確認してください');
+            }
+            history.replaceState(null, '', location.pathname + location.search);
+          }
+
+          codeEl.value = state.code;
+          $('#runJs').checked = state.runJs;
+          $('#hideSize').checked = state.hideSize;
+          $('#hideInherited').checked = state.hideInherited;
+
+          buildUI();
+          bindEvents();
+          setMode(state.mode === 'grid' ? 'grid' : 'single');
+          setWidth(['pc', 'sp', 'fit'].includes(state.width) ? state.width : 'pc');
+          setActive(state.active, false);
+          if (!SITES.length) toast('sites.js にサイトが設定されていません');
+          render();
+        }
+
+        init();
+      })();
+    </script>
+  </body>
+
 </html>
