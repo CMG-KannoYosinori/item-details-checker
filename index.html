@@ -129,6 +129,22 @@
         grid-template-columns: minmax(320px, 36%) 1fr;
       }
 
+      .layout.editor-collapsed {
+        grid-template-columns: 40px 1fr;
+      }
+
+      .layout.editor-collapsed .editor-head label,
+      .layout.editor-collapsed .editor-head .hint,
+      .layout.editor-collapsed textarea,
+      .layout.editor-collapsed .editor-foot {
+        display: none;
+      }
+
+      .layout.editor-collapsed .editor-head {
+        justify-content: center;
+        padding: 8px 2px;
+      }
+
       /* editor */
       .editor {
         display: flex;
@@ -566,6 +582,14 @@
           border-bottom: 1px solid var(--line);
         }
 
+        .layout.editor-collapsed {
+          grid-template-columns: 1fr;
+        }
+
+        .layout.editor-collapsed .editor {
+          height: auto;
+        }
+
         .stage {
           min-height: 70vh;
           flex: none;
@@ -590,11 +614,12 @@
       <button type="button" class="btn" id="shareBtn">共有リンクをコピー</button>
     </header>
 
-    <div class="layout">
+    <div class="layout" id="layout">
       <section class="editor" aria-label="ブロックのコード">
         <div class="editor-head">
           <label for="code">ブロックのHTML</label>
           <span class="hint">入力後すこし待つか ⌘/Ctrl + Enter で更新</span>
+          <button type="button" class="btn quiet" id="editorToggleBtn" aria-expanded="true" aria-label="ブロックのHTML欄を折りたたむ" title="折りたたむ">◀</button>
         </div>
         <textarea id="code" spellcheck="false" autocomplete="off" aria-describedby="codeKeys">        <div class="">
           <!-- fonts -->
@@ -1101,6 +1126,7 @@
           mode: 'single',
           width: 'tablet',
           gridDir: 'row',
+          editorCollapsed: false,
           runJs: false,
           hideSize: true,
           hideInherited: true
@@ -1515,6 +1541,19 @@
           save();
         }
 
+        function setEditorCollapsed(collapsed) {
+          state.editorCollapsed = collapsed;
+          $('#layout').classList.toggle('editor-collapsed', collapsed);
+          const btn = $('#editorToggleBtn');
+          btn.textContent = collapsed ? '▶' : '◀';
+          btn.setAttribute('aria-expanded', String(!collapsed));
+          const label = collapsed ? '開く' : '折りたたむ';
+          btn.setAttribute('aria-label', `ブロックのHTML欄を${label}`);
+          btn.title = label;
+          requestAnimationFrame(() => { layoutAll(); scheduleDiff(); });
+          save();
+        }
+
         function setWidth(w) {
           setSeg($('#widthSeg'), 'width', w);
           layoutAll();
@@ -1558,6 +1597,7 @@
           $('#hideInherited').addEventListener('change', e => { state.hideInherited = e.target.checked; save(); computeDiffs(); });
           $('#modeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setMode(b.dataset.value); });
           $('#gridDirSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setGridDir(b.dataset.value); });
+          $('#editorToggleBtn').addEventListener('click', () => setEditorCollapsed(!state.editorCollapsed));
           $('#widthSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setWidth(b.dataset.value); });
 
           $('#diffToggle').addEventListener('click', e => {
@@ -1616,6 +1656,7 @@
           bindEvents();
           setMode(state.mode === 'grid' ? 'grid' : 'single');
           setGridDir(state.gridDir === 'col' ? 'col' : 'row');
+          setEditorCollapsed(!!state.editorCollapsed);
           setWidth(['tablet', 'sp', 'fit'].includes(state.width) ? state.width : 'tablet');
           setActive(state.active);
           if (!SITES.length) toast('sites.js にサイトが設定されていません');
