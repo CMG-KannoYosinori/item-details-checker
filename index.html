@@ -313,6 +313,10 @@
         grid-auto-rows: minmax(320px, 1fr);
       }
 
+      .stage.grid.dir-col {
+        grid-template-columns: 1fr;
+      }
+
       .stage.grid .pane {
         display: none;
       }
@@ -934,6 +938,10 @@
               <button type="button" data-value="single">1画面</button>
               <button type="button" data-value="grid">並べて比較</button>
             </div>
+            <div class="seg small" id="gridDirSeg" aria-label="並べる向き" hidden>
+              <button type="button" data-value="row">横に並べる</button>
+              <button type="button" data-value="col">縦に並べる</button>
+            </div>
           </div>
         </div>
 
@@ -985,6 +993,7 @@
           active: SITES.length ? String(SITES[0].id) : 'base',
           mode: 'single',
           width: 'pc',
+          gridDir: 'row',
           runJs: false,
           hideSize: true,
           hideInherited: true
@@ -1387,7 +1396,15 @@
           setSeg($('#modeSeg'), 'mode', mode);
           stage.classList.toggle('single', mode === 'single');
           stage.classList.toggle('grid', mode === 'grid');
+          $('#gridDirSeg').hidden = mode !== 'grid';
           requestAnimationFrame(() => { layoutAll(); scheduleDiff(); });
+          save();
+        }
+
+        function setGridDir(dir) {
+          setSeg($('#gridDirSeg'), 'gridDir', dir);
+          stage.classList.toggle('dir-col', dir === 'col');
+          requestAnimationFrame(layoutAll);
           save();
         }
 
@@ -1433,6 +1450,7 @@
           $('#hideSize').addEventListener('change', e => { state.hideSize = e.target.checked; save(); computeDiffs(); });
           $('#hideInherited').addEventListener('change', e => { state.hideInherited = e.target.checked; save(); computeDiffs(); });
           $('#modeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setMode(b.dataset.value); });
+          $('#gridDirSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setGridDir(b.dataset.value); });
           $('#widthSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setWidth(b.dataset.value); });
 
           $('#diffToggle').addEventListener('click', e => {
@@ -1447,7 +1465,7 @@
 
           $('#shareBtn').addEventListener('click', async () => {
             try {
-              const params = new URLSearchParams({ c: await encode(state.code), s: state.active, m: state.mode, w: state.width });
+              const params = new URLSearchParams({ c: await encode(state.code), s: state.active, m: state.mode, w: state.width, d: state.gridDir });
               const url = location.href.split('#')[0] + '#' + params.toString();
               await navigator.clipboard.writeText(url);
               toast(url.length > 8000
@@ -1474,6 +1492,7 @@
               if (hash.get('s')) state.active = hash.get('s');
               if (hash.get('m') === 'single' || hash.get('m') === 'grid') state.mode = hash.get('m');
               if (['pc', 'sp', 'fit'].includes(hash.get('w'))) state.width = hash.get('w');
+              if (['row', 'col'].includes(hash.get('d'))) state.gridDir = hash.get('d');
               toast('共有リンクのコードを読み込みました');
             } catch (e) {
               toast('共有リンクを読み込めませんでした。URLが途中で切れていないか確認してください');
@@ -1489,6 +1508,7 @@
           buildUI();
           bindEvents();
           setMode(state.mode === 'grid' ? 'grid' : 'single');
+          setGridDir(state.gridDir === 'col' ? 'col' : 'row');
           setWidth(['pc', 'sp', 'fit'].includes(state.width) ? state.width : 'pc');
           setActive(state.active);
           if (!SITES.length) toast('sites.js にサイトが設定されていません');
