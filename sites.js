@@ -106,6 +106,25 @@ window.PREVIEW_SITES = [
     wrapper: '<div class="body-wrapper"><div class="main"><div class="contents cf contents--responsive"><div class="primary primary--responsive"><div id="F001" class="js-t-wrapper itemDetailBox"><div style="margin-top: 10px;"><div id="g3">{{content}}</div></div></div></div></div></div></div>',
     baseUrl: 'https://tsample.tsite.jp/detail/tamesu.php?test=103b065d1c08029dcac48f9e695466b4&project_id=2ff32'
   },
+  {
+    id: 'sharefull',
+    name: 'シェアフルモニター',
+    css: [
+      'https://sharefull.moratame.net/css/style.css?2026092913',
+      'https://sharefull.moratame.net/vendors/fontawesome/css/all.css?2026092913',
+      'https://sharefull.moratame.net/css/system.css?2026092913',
+      'https://sharefull.moratame.net/css/utilities.css?2026092913',
+      'https://sharefull.moratame.net/css/triangle.css?2026092913',
+      'https://sharefull.moratame.net/css/limited-coupon.css?2026092913',
+      'https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css',
+      'https://sharefull.moratame.net/css/p-item-visual.css?2026092913',
+      'https://sharefull.moratame.net/css/patch-item-detail.css?2026092913'
+    ],
+    headHtml: '',
+    bodyClass: 'itemDetail',
+    wrapper: '<div class="body-wrapper"><main><div class="l-container"><div><div class="p-item-detail"><div id="g1">{{content}}</div></div></div></div></main></div>',
+    baseUrl: 'https://sharefull.moratame.net/detail/tamesu.php?test=b0c9ca1153f21b2a2fee94e5c0d7bc4c&project_id=e82b5'
+  }
 ];
 
 /**
