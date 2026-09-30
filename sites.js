@@ -77,6 +77,35 @@ window.PREVIEW_SITES = [
     wrapper: '<div id="F001" class="js-t-wrapper"><div style="margin-top: 10px;"><div id="g3">{{content}}</div></div></div>',
     baseUrl: 'https://au.moratame.net/detail/tamesu.php?test=106da02dd6618318562493e8addf0ea2&project_id=bcef0'
   },
+  {
+    id: 'tsample',
+    name: 'Vサンプル',
+    css: [
+      'https://tsample.tsite.jp/css/bootstrap.v3.3.7--scope.css?2026093012',
+      'https://tsample.tsite.jp/css/reset.css?2026093012',
+      'https://tsample.tsite.jp/css/properties.css?2026093012',
+      'https://tsample.tsite.jp/css/main.css?2026093012',
+      'https://tsample.tsite.jp/css/layout.css?2026093012',
+      'https://tsample.tsite.jp/css/module.css?2026093012',
+      'https://tsample.tsite.jp/css/style--common-sp-and-pc.css?2026093012',
+      'https://tsample.tsite.jp/css/reset-old-style--jp.css?2026093012',
+      'https://tsample.tsite.jp/css/style--pc.css?2026093012',
+      'https://tsample.tsite.jp/css/style--sp.css?2026093012',
+      'https://tsample.tsite.jp/css/t.css?2026093012',
+      'https://tsample.tsite.jp/css/pass_monitor.css?2026093012',
+      'https://tsample.tsite.jp/css/t-sample.css?2026093012',
+      'https://tsample.tsite.jp/plugins/slick/slick.css?2026093012',
+      'https://tsample.tsite.jp/plugins/slick/slick-theme.css?2026093012',
+      'https://tsample.tsite.jp/plugins/slick/slick-theme-user.css?2026093012',
+      'https://tsample.tsite.jp/css/p9255-common--pc.css?2026093012',
+      'https://use.fontawesome.com/releases/v5.0.6/css/all.css',
+      'https://tsample.tsite.jp/css/triangle.css?2026093012'
+    ],
+    headHtml: '',
+    bodyClass: 'bootstrap-v3-3-7--scope itemDetail',
+    wrapper: '<div class="body-wrapper"><div class="main"><div class="contents cf contents--responsive"><div class="primary primary--responsive"><div id="F001" class="js-t-wrapper itemDetailBox"><div style="margin-top: 10px;"><div id="g3">{{content}}</div></div></div></div></div></div></div>',
+    baseUrl: 'https://tsample.tsite.jp/detail/tamesu.php?test=103b065d1c08029dcac48f9e695466b4&project_id=2ff32'
+  },
 ];
 
 /**
