@@ -313,6 +313,15 @@
         grid-auto-rows: minmax(320px, 1fr);
       }
 
+      .stage.grid .pane {
+        display: none;
+      }
+
+      .stage.grid .pane.is-base,
+      .stage.grid .pane.is-active {
+        display: flex;
+      }
+
       .pane {
         display: flex;
         flex-direction: column;
@@ -1075,11 +1084,11 @@
               badge.title = '基準と差がある要素の数';
               b.append(badge);
             }
-            b.addEventListener('click', () => setActive(t.id, true));
+            b.addEventListener('click', () => setActive(t.id));
             siteSeg.append(b);
 
             const pane = document.createElement('div');
-            pane.className = 'pane';
+            pane.className = t.base ? 'pane is-base' : 'pane';
             const head = document.createElement('div');
             head.className = 'pane-head';
             const nameEl = document.createElement('span');
@@ -1105,7 +1114,7 @@
             box.className = 'frame-box';
             body.append(box);
             pane.append(head, body);
-            pane.addEventListener('pointerdown', () => { if (state.mode === 'grid') setActive(t.id, false); });
+            pane.addEventListener('pointerdown', () => { if (state.mode === 'grid') setActive(t.id); });
             stage.append(pane);
 
             panes.set(t.id, { t, el: pane, body, box, warnEl, sizeEl, iframe: null, token: 0 });
@@ -1359,14 +1368,12 @@
         }
 
         /* ---------- controls ---------- */
-        function setActive(id, fromButton) {
+        function setActive(id) {
           if (!targetById(id)) id = 'base';
           state.active = id;
           siteSeg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
           panes.forEach((p, pid) => p.el.classList.toggle('is-active', pid === id));
-          if (fromButton && state.mode === 'grid') {
-            panes.get(id).el.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
-          }
+          if (state.mode === 'grid') requestAnimationFrame(layoutAll);
           renderDiff();
           save();
         }
@@ -1483,7 +1490,7 @@
           bindEvents();
           setMode(state.mode === 'grid' ? 'grid' : 'single');
           setWidth(['pc', 'sp', 'fit'].includes(state.width) ? state.width : 'pc');
-          setActive(state.active, false);
+          setActive(state.active);
           if (!SITES.length) toast('sites.js にサイトが設定されていません');
           render();
         }
