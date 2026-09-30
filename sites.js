@@ -64,14 +64,19 @@ window.PREVIEW_SITES = [
     baseUrl: 'https://www.moratame.net/s/detail/tamesu.php?project_id=89cd7'
   },
   {
-    id: 'c',
-    name: 'Cサイト',
-    css: ['https://c-site.example.com/style.css'],
+    id: 'au-moratame',
+    name: '商品モニター',
+    css: [
+      'https://au.moratame.net/css/t.css?2026093011',
+      'https://au.moratame.net/css/pass_monitor.css?2026093011',
+      'https://cdn-img.auone.jp/pass/asset/scarab/css/nav.css',
+      'https://au.moratame.net/css/triangle.css'
+    ],
     headHtml: '',
-    bodyClass: '',
-    wrapper: '{{content}}',
-    baseUrl: 'https://c-site.example.com/'
-  }
+    bodyClass: 'scr-wrapper',
+    wrapper: '<div id="F001" class="js-t-wrapper"><div style="margin-top: 10px;"><div id="g3">{{content}}</div></div></div>',
+    baseUrl: 'https://au.moratame.net/detail/tamesu.php?test=106da02dd6618318562493e8addf0ea2&project_id=bcef0'
+  },
 ];
 
 /**
