@@ -1,0 +1,26 @@
+/* 基準ペイン専用: sites.js の全サイトで共通して効いているリセットだけを集めたもの */
+h1, h2, h3, h4, p, ul, ol, dl, dd, figure, fieldset {
+  margin: 0;
+}
+
+ul, ol {
+  padding-left: 0;
+}
+
+a {
+  text-decoration: none;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+fieldset {
+  padding: 0;
+  border-width: 0;
+}
+
+iframe {
+  border-width: 0;
+}

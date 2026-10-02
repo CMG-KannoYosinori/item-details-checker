@@ -128,9 +128,11 @@ window.PREVIEW_SITES = [
 ];
 
 /**
- * 「基準（サイトCSSなし）」表示の設定
+ * 「基準」表示の設定
  * baseUrl: ブロック内の相対パスをどこ基準で解決するか（空なら解決しない）
+ * css    : 基準で読み込む CSS。全サイトで共通して効いているリセットだけを入れる（index.html からの相対パスで可）
  */
 window.PREVIEW_OPTIONS = {
-  baseUrl: ''
+  baseUrl: '',
+  css: ['base-reset.css']
 };
