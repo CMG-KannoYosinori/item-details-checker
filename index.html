@@ -136,6 +136,7 @@
       .layout.editor-collapsed .editor-head label,
       .layout.editor-collapsed .editor-head .hint,
       .layout.editor-collapsed textarea,
+      .layout.editor-collapsed .lint,
       .layout.editor-collapsed .editor-foot {
         display: none;
       }
@@ -195,6 +196,45 @@
       .editor textarea:focus {
         outline: none;
         box-shadow: inset 0 0 0 2px var(--accent-soft);
+      }
+
+      .lint {
+        max-height: 30%;
+        overflow: auto;
+        padding: 6px 12px 8px;
+        border-top: 1px solid var(--line-soft);
+        background: var(--warn-soft);
+        color: var(--warn);
+        font-size: 13px;
+      }
+
+      .lint-title {
+        margin: 0 0 2px;
+        font-weight: 600;
+      }
+
+      .lint-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .lint-list button {
+        padding: 2px 0;
+        border: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .lint-list button:hover {
+        text-decoration: underline;
+      }
+
+      .lint-list code {
+        font-family: var(--mono);
       }
 
       .editor-foot {
@@ -1034,6 +1074,10 @@
           <script src="https://image.moratame.net/images/detail/00000/scripts/accordion.2.js"></script>
         </div></textarea>
         <span class="sr-only" id="codeKeys">Tabキーでインデントします。入力欄から移動するときは Esc を押してから Tab を押してください。</span>
+        <div class="lint" id="lint" role="status" hidden>
+          <p class="lint-title" id="lintTitle"></p>
+          <ul class="lint-list" id="lintList"></ul>
+        </div>
         <div class="editor-foot">
           <label class="check"><input type="checkbox" id="runJs"> JavaScriptを実行する</label>
           <button type="button" class="btn primary" id="renderBtn">プレビューを更新</button>
@@ -1317,8 +1361,89 @@
           });
         }
 
+        /* ---------- tag check ---------- */
+        const VOID_TAGS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
+        // HTMLの仕様上、終了タグを省略してよい要素。閉じていなくても警告しない
+        const OPTIONAL_END_TAGS = new Set(['p', 'li', 'dt', 'dd', 'option', 'optgroup', 'tr', 'td', 'th', 'thead', 'tbody', 'tfoot', 'colgroup', 'caption', 'rt', 'rp', 'html', 'head', 'body']);
+        const RAW_TEXT_TAGS = new Set(['script', 'style', 'textarea', 'title']);
+
+        // ブラウザのパーサーは対応の崩れを黙って補正してしまうので、元の文字列を自前で走査する
+        function checkTags(src) {
+          const issues = [];
+          const stack = [];
+          const unclosed = (el, before) => {
+            if (OPTIONAL_END_TAGS.has(el.name)) return;
+            issues.push({ pos: el.pos, len: el.len, html: `<code>&lt;${el.name}&gt;</code> が閉じられていません` + (before ? `（<code>&lt;/${before}&gt;</code> より前で閉じる必要があります）` : '') });
+          };
+          // インラインscript内に「<!」+「--」を直接書くとHTMLパーサーが特殊な状態に入るので -{2} で表す
+          const re = /<!-{2}[\s\S]*?(?:-{2}>|$)|<![^>]*>|<(\/?)([a-zA-Z][^\s/>]*)((?:"[^"]*"|'[^']*'|[^'">])*)>/g;
+          let m;
+          while ((m = re.exec(src))) {
+            const pos = m.index, len = m[0].length;
+            if (/^<!-{2}/.test(m[0])) {
+              if (!/-{2}>$/.test(m[0])) issues.push({ pos, len: 4, html: 'コメント <code>&lt;!--</code> が閉じられていません' });
+              continue;
+            }
+            if (m[0].startsWith('<!')) continue;
+            const name = m[2].toLowerCase();
+            if (m[1]) {
+              if (VOID_TAGS.has(name)) {
+                issues.push({ pos, len, html: `<code>&lt;/${name}&gt;</code> は不要です（${name} は終了タグのない要素です）` });
+                continue;
+              }
+              let i = stack.length - 1;
+              while (i >= 0 && stack[i].name !== name) i--;
+              if (i < 0) {
+                issues.push({ pos, len, html: `<code>&lt;/${name}&gt;</code> に対応する開始タグがありません` });
+                continue;
+              }
+              for (let j = stack.length - 1; j > i; j--) unclosed(stack[j], name);
+              stack.length = i;
+              continue;
+            }
+            if (VOID_TAGS.has(name) || /\/\s*$/.test(m[3])) continue;
+            if (RAW_TEXT_TAGS.has(name)) {
+              const end = new RegExp(`</${name}\\s*>`, 'ig');
+              end.lastIndex = re.lastIndex;
+              if (!end.exec(src)) {
+                unclosed({ name, pos, len });
+                break;
+              }
+              re.lastIndex = end.lastIndex;
+              continue;
+            }
+            stack.push({ name, pos, len });
+          }
+          stack.forEach(el => unclosed(el));
+          return issues.sort((a, b) => a.pos - b.pos);
+        }
+
+        const LINT_MAX = 20;
+        let lintIssues = [];
+        function renderLint() {
+          lintIssues = checkTags(state.code);
+          const box = $('#lint');
+          box.hidden = !lintIssues.length;
+          if (!lintIssues.length) return;
+          $('#lintTitle').textContent = `タグの対応に問題があります（${lintIssues.length}件）`;
+          const lineOf = pos => state.code.slice(0, pos).split('\n').length;
+          $('#lintList').innerHTML = lintIssues.slice(0, LINT_MAX).map((it, i) =>
+            `<li><button type="button" data-i="${i}">${lineOf(it.pos)}行目: ${it.html}</button></li>`).join('') +
+            (lintIssues.length > LINT_MAX ? `<li>ほか ${lintIssues.length - LINT_MAX}件</li>` : '');
+        }
+
+        function jumpToIssue(it) {
+          codeEl.focus();
+          codeEl.setSelectionRange(it.pos, it.pos + it.len);
+          const line = state.code.slice(0, it.pos).split('\n').length;
+          const lh = parseFloat(getComputedStyle(codeEl).lineHeight);
+          codeEl.scrollTop = Math.max(0, (line - 1) * lh - codeEl.clientHeight / 3);
+          codeEl.scrollLeft = 0;
+        }
+
         function render() {
           const seq = ++renderSeq;
+          renderLint();
           save();
           diffs = {};
           updateBadges();
@@ -1576,6 +1701,10 @@
           });
 
           $('#renderBtn').addEventListener('click', () => { clearTimeout(inputTimer); render(); });
+          $('#lintList').addEventListener('click', e => {
+            const b = e.target.closest('button');
+            if (b) jumpToIssue(lintIssues[Number(b.dataset.i)]);
+          });
           $('#runJs').addEventListener('change', e => { state.runJs = e.target.checked; render(); });
           $('#hideSize').addEventListener('change', e => { state.hideSize = e.target.checked; save(); computeDiffs(); });
           $('#hideInherited').addEventListener('change', e => { state.hideInherited = e.target.checked; save(); computeDiffs(); });
