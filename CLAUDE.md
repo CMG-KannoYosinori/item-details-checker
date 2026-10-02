@@ -9,7 +9,8 @@
 ## ファイル構成
 
 - `index.html` — アプリケーション本体。CSSとJSはすべてこの1ファイルにインラインで記述されています。対象サイトの追加・変更だけを行う場合、通常は編集しません。
-- `sites.js` — 日常的なメンテナンスで編集する唯一のファイル。`window.PREVIEW_SITES`（`id`、`name`、`css`、`headHtml`、`bodyClass`、`wrapper`、`baseUrl` を持つ対象サイトの配列）と `window.PREVIEW_OPTIONS`（ベースラインの `baseUrl`）を定義します。各フィールドの意味は、ファイル冒頭のJSDocコメントとREADMEの「sites.js の書き方」セクションを参照してください。
+- `sites.js` — 日常的なメンテナンスで編集する唯一のファイル。`window.PREVIEW_SITES`（`id`、`name`、`css`、`headHtml`、`bodyClass`、`wrapper`、`baseUrl` を持つ対象サイトの配列）と `window.PREVIEW_OPTIONS`（ベースラインの `baseUrl` と `css`）を定義します。各フィールドの意味は、ファイル冒頭のJSDocコメントとREADMEの「sites.js の書き方」セクションを参照してください。
+- `base-reset.css` — ベースラインにだけ読み込むCSS。`sites.js` の全サイトで計算スタイルが一致するリセット（見出し・段落・リストの margin、`ul`/`ol` の padding など）だけを入れます。全サイトに共通しないルールを入れると、そのサイトとの差分が隠れたり逆に増えたりするので注意してください。
 - `README.md` — 日本語のユーザー向けドキュメント。ファイル構成、GitHub Pages（非公開）への公開手順、`sites.js` の書式、使い方、既知の制約について記載しています。
 
 ビルドステップ、パッケージマネージャー、バンドラー、テストスイートは存在しません。
@@ -28,7 +29,7 @@ python3 -m http.server
 
 すべての処理は `index.html` 末尾の単一のIIFE内でクライアントサイドのみで完結しています。
 
-- **対象（Targets）**: `TARGETS = [BASE, ...PREVIEW_SITES]`。`BASE` は「サイトCSSなし」を表す合成的な参照用対象で、それ以外の対象は `sites.js` に定義された実サイトです。
+- **対象（Targets）**: `TARGETS = [BASE, ...PREVIEW_SITES]`。`BASE` は「サイト固有CSSなし・共通リセットのみ」を表す合成的な参照用対象（`PREVIEW_OPTIONS.css`＝`base-reset.css` をページ基準の絶対URLにして読み込む。ラッパーとbodyClassはなし）で、それ以外の対象は `sites.js` に定義された実サイトです。
 - **ドキュメント構築（`buildDoc`）**: 対象ごとに、ユーザーが貼り付けたコードを `<!--cpv:start-->` / `<!--cpv:end-->` のマーカーコメントで囲み、そのサイトの `css` のlinkタグ、`headHtml`、`bodyClass`、`wrapper`（`{{content}}` を置換）を注入した完全なHTMLドキュメント文字列を組み立てます。この文字列は `<iframe srcdoc>` に割り当てられ、対象1つにつき1つのiframeが `panes` というMapで管理されます。
 - **差分計算（`computeDiffs` / `blockElements`）**: ベースラインiframeと対象サイトiframeの両方で、マーカーコメント間のDOMをたどってインデックスで要素をペアリングし、`getComputedStyle` のプロパティ単位で網羅的に比較します。2つのフィルターを切り替え可能です。`hideSize`（`SIZE_PROPS` の幅・高さ・transform-origin関連のプロパティを無視する。これらは `font-size` や `padding` などの変化から連動して決まるレイアウト結果で、原因となる差分1つにつき親子の多数の要素へノイズとして波及するため。差分は各iframe内部の `getComputedStyle` で取るので、外側の `transform: scale()` の影響は受けない）と `hideInherited`（親要素で既に同じプロパティの差分が表示されている場合、子要素側の差分を抑制する。それは新しいサイト固有のルールではなく継承によるものであるため）です。さらに `FOLLOWS_COLOR` という正規表現により、`border-color` のように単に `currentColor` を追従しているだけの派生的なcolor系プロパティの差分も抑制されます。
 - **レイアウト・スケーリング（`layoutPane`、`layoutAll`）**: 各ペインのiframeは固定の論理幅（tablet 768 / SP 375 / ペインに合わせる）でレンダリングされ、`transform: scale()` によって利用可能なペイン幅に収まるようCSSで縮小表示されます。
